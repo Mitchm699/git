@@ -252,7 +252,7 @@ static int init_basic_state(struct replay_opts *opts, const char *head_name,
 	if (!is_directory(merge_dir()) && mkdir_in_gitdir(merge_dir()))
 		return error_errno(_("could not create temporary %s"), merge_dir());
 
-	delete_reflog("REBASE_HEAD");
+	refs_delete_reflog(get_main_ref_store(the_repository), "REBASE_HEAD");
 
 	interactive = fopen(path_interactive(), "w");
 	if (!interactive)
@@ -518,8 +518,10 @@ static int finish_rebase(struct rebase_options *opts)
 	struct strbuf dir = STRBUF_INIT;
 	int ret = 0;
 
-	delete_ref(NULL, "REBASE_HEAD", NULL, REF_NO_DEREF);
-	delete_ref(NULL, "AUTO_MERGE", NULL, REF_NO_DEREF);
+	refs_delete_ref(get_main_ref_store(the_repository), NULL,
+			"REBASE_HEAD", NULL, REF_NO_DEREF);
+	refs_delete_ref(get_main_ref_store(the_repository), NULL,
+			"AUTO_MERGE", NULL, REF_NO_DEREF);
 	apply_autostash(state_dir_path("autostash", opts));
 	/*
 	 * We ignore errors in 'git maintenance run --auto', since the
@@ -1627,7 +1629,7 @@ int cmd_rebase(int argc, const char **argv, const char *prefix)
 		/* Is it a local branch? */
 		strbuf_reset(&buf);
 		strbuf_addf(&buf, "refs/heads/%s", branch_name);
-		if (!read_ref(buf.buf, &branch_oid)) {
+		if (!refs_read_ref(get_main_ref_store(the_repository), buf.buf, &branch_oid)) {
 			die_if_checked_out(buf.buf, 1);
 			options.head_name = xstrdup(buf.buf);
 			options.orig_head =
@@ -1644,8 +1646,8 @@ int cmd_rebase(int argc, const char **argv, const char *prefix)
 	} else if (argc == 0) {
 		/* Do not need to switch branches, we are already on it. */
 		options.head_name =
-			xstrdup_or_null(resolve_ref_unsafe("HEAD", 0, NULL,
-					 &flags));
+			xstrdup_or_null(refs_resolve_ref_unsafe(get_main_ref_store(the_repository), "HEAD", 0, NULL,
+								&flags));
 		if (!options.head_name)
 			die(_("No such ref: %s"), "HEAD");
 		if (flags & REF_ISSYMREF) {
@@ -1739,7 +1741,7 @@ int cmd_rebase(int argc, const char **argv, const char *prefix)
 			if (!(options.flags & REBASE_NO_QUIET))
 				; /* be quiet */
 			else if (!strcmp(branch_name, "HEAD") &&
-				 resolve_ref_unsafe("HEAD", 0, NULL, &flag))
+				 refs_resolve_ref_unsafe(get_main_ref_store(the_repository), "HEAD", 0, NULL, &flag))
 				puts(_("HEAD is up to date."));
 			else
 				printf(_("Current branch %s is up to date.\n"),
@@ -1749,7 +1751,7 @@ int cmd_rebase(int argc, const char **argv, const char *prefix)
 		} else if (!(options.flags & REBASE_NO_QUIET))
 			; /* be quiet */
 		else if (!strcmp(branch_name, "HEAD") &&
-			 resolve_ref_unsafe("HEAD", 0, NULL, &flag))
+			 refs_resolve_ref_unsafe(get_main_ref_store(the_repository), "HEAD", 0, NULL, &flag))
 			puts(_("HEAD is up to date, rebase forced."));
 		else
 			printf(_("Current branch %s is up to date, rebase "

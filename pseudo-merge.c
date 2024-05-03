@@ -419,7 +419,8 @@ void select_pseudo_merges(struct string_list *list,
 	if (show_progress)
 		progress = start_progress("Selecting pseudo-merge commits", list->nr);
 
-	for_each_ref(find_pseudo_merge_group_for_ref, list);
+	refs_for_each_ref(get_main_ref_store(the_repository),
+			  find_pseudo_merge_group_for_ref, list);
 
 	for (i = 0; i < list->nr; i++) {
 		struct pseudo_merge_group *group;

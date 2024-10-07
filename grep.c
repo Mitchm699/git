@@ -245,7 +245,7 @@ static int is_fixed(const char *s, size_t len)
 #ifdef USE_LIBPCRE2
 #define GREP_PCRE2_DEBUG_MALLOC 0
 
-static void *pcre2_malloc(PCRE2_SIZE size, MAYBE_UNUSED void *memory_data)
+static void *pcre2_malloc(PCRE2_SIZE size, void *memory_data UNUSED)
 {
 	void *pointer = malloc(size);
 #if GREP_PCRE2_DEBUG_MALLOC
@@ -255,7 +255,7 @@ static void *pcre2_malloc(PCRE2_SIZE size, MAYBE_UNUSED void *memory_data)
 	return pointer;
 }
 
-static void pcre2_free(void *pointer, MAYBE_UNUSED void *memory_data)
+static void pcre2_free(void *pointer, void *memory_data UNUSED)
 {
 #if GREP_PCRE2_DEBUG_MALLOC
 	static int count = 1;
@@ -843,11 +843,11 @@ static void free_grep_pat(struct grep_pat *pattern)
 				free_pcre2_pattern(p);
 			else
 				regfree(&p->regexp);
-			free(p->pattern);
 			break;
 		default:
 			break;
 		}
+		free(p->pattern);
 		free(p);
 	}
 }
